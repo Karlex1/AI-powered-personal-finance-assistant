@@ -8,45 +8,45 @@ import { useNavigate } from "react-router-dom";
 import LogoutIcon from '@mui/icons-material/Logout';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+//import CameraAltIcon from '@mui/icons-material/CameraAlt'; // Icon for editing avatar
 
 const Dashboard = () => {
     const { currentUser, logout } = useAuth(); // Get the logged-in user and logout function
     const [transactions, setTransactions] = useState([]);
     const [totalMoney, setTotalMoney] = useState(0); // Money from transactions
     const [userBudget, setUserBudget] = useState(0); // User's registered budget
+    const [userName, setUserName] = useState("User"); // User's registered budget
     const [newBudget, setNewBudget] = useState(""); // Budget to be updated
     const [isEditing, setIsEditing] = useState(false); // Toggle for edit mode
     const navigate = useNavigate(); // To navigate between pages
 
     useEffect(() => {
-        // Fetch user details (including budget) from Firestore
         if (currentUser) {
             const userRef = doc(db, "users", currentUser.uid);
             const unsubscribeUser = onSnapshot(userRef, (doc) => {
                 const userData = doc.data();
-                setUserBudget(userData?.budget || 0); // Set the user's registered budget
+                setUserBudget(userData?.budget || 0);
+                setUserName(userData?.name?.toUpperCase() || 0);
+
             });
 
-            // Fetch transactions from Firestore for the current user
             const q = query(collection(db, "transactions"), where("userId", "==", currentUser.uid));
             const unsubscribeTransactions = onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
                 setTransactions(data);
 
-                // Calculate total money from transactions
                 const total = data.reduce((sum, transaction) => sum + transaction.amount, 0);
                 setTotalMoney(total);
             });
 
             return () => {
                 unsubscribeUser();
-                unsubscribeTransactions(); // Cleanup on component unmount
+                unsubscribeTransactions();
             };
         }
     }, [currentUser]);
 
     useEffect(() => {
-        // Initialize the chart with transaction data
         if (transactions.length > 0) {
             const ctx = document.getElementById("transactionChart").getContext("2d");
             const categories = transactions.map((t) => t.category);
@@ -71,7 +71,7 @@ const Dashboard = () => {
     const handleLogout = async () => {
         try {
             await logout();
-            navigate("/"); // Redirect to login page
+            navigate("/");
         } catch (error) {
             console.error("Failed to log out:", error.message);
         }
@@ -79,27 +79,29 @@ const Dashboard = () => {
 
     const handleIncome = async () => {
         try {
-            // Update the user's budget in Firestore
             const userRef = doc(db, "users", currentUser.uid);
             await updateDoc(userRef, {
-                budget: parseFloat(newBudget), // Update budget
+                budget: parseFloat(newBudget),
             });
-            setUserBudget(newBudget); // Update the local state to reflect the new budget
-            setNewBudget(""); // Clear input field
-            setIsEditing(false); // Exit edit mode
+            setUserBudget(newBudget);
+            setNewBudget("");
+            setIsEditing(false);
         } catch (error) {
             console.error("Failed to update budget:", error.message);
         }
     };
 
     const handleEditClick = () => {
-        setIsEditing(true); // Enter edit mode
-        setNewBudget(userBudget); // Pre-fill input with current budget
+        setIsEditing(true);
+        setNewBudget(userBudget);
+    };
+
+    const handleAvatarEdit = () => {
+        alert("Feature to update avatar coming soon!");
     };
 
     return (
         <div className="dashboard">
-            {/* Left Panel */}
             <div className="left-panel">
                 <div className="user-avatar">
                     <img
@@ -109,44 +111,39 @@ const Dashboard = () => {
                         }
                         alt="User Avatar"
                     />
-                    <button onClick={() => alert("Feature to update avatar coming soon!")}>
-                        Update Avatar
+                    <button className="avatar-edit" onClick={handleAvatarEdit}>
+                        <EditIcon />
                     </button>
                 </div>
-
-                {/* Budget Display */}
-                <div className="total-money">
-                    Budget : 
+                <div className="welcome-message">
+                    Welcome, {userName}!
+                </div>
+                <div className="money">
+                    Budget : &nbsp;
                     {isEditing ? (
                         <>
                             <input
                                 type="number"
                                 placeholder="Update Budget"
                                 value={newBudget}
-                                onChange={(e) => setNewBudget(e.target.value)} // Update budget state
+                                onChange={(e) => setNewBudget(e.target.value)}
                             />
-
                             <SaveIcon onClick={handleIncome} />
-
                         </>
                     ) : (
                         <>
-                             ${userBudget.toFixed(2)}{/* Display the registered budget */}
+                            ${userBudget}
                             <EditIcon onClick={handleEditClick} />
                         </>
                     )}
                 </div>
-                <div className="total-money">Spend : ${totalMoney.toFixed(2)} </div>
+                <div className="money">Spend : ${totalMoney.toFixed(2)} </div>
                 <LogoutIcon onClick={handleLogout} />
             </div>
-
-            {/* Center Panel */}
             <div className="center-panel">
                 <h3>Transaction Chart</h3>
                 <canvas id="transactionChart"></canvas>
             </div>
-
-            {/* Bottom Panel */}
             <div className="bottom-panel">
                 <h3>Recent Transactions</h3>
                 <ul>
