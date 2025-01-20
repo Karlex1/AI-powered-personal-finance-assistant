@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { useAuth } from "../../Context/AuthContext"; // AuthContext for Firebase functions
 import { useNavigate } from "react-router-dom";
-import { doc, setDoc } from "firebase/firestore"; // Firestore methods
-import { db } from "../../firebase"; // Firestore instance from firebase.js
+// import { doc, setDoc } from "firebase/firestore"; // Firestore methods
+// import { db } from "../../firebase"; // Firestore instance from firebase.js
 
 const Register = () => {
     const { register } = useAuth(); // Register function from AuthContext
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
+    const [budget, setBudget] = useState("");
     const [gender, setGender] = useState("");
+    const [som, setSom] = useState("");//start_of_month
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
@@ -18,16 +20,10 @@ const Register = () => {
         setError("");
 
         try {
-            // Register the user with Firebase Auth
-            const userCredential = await register(email, password);
+            await register(email, password, name, gender, budget, som);
 
-            // Store additional details in Firestore
-            const userRef = doc(db, "users", userCredential.user.uid);
-            await setDoc(userRef, {
-                name,
-                email,
-                gender,
-            });
+            // Navigate to the dashboard
+            navigate("/dashboard");
 
             // Navigate to the dashboard
             navigate("/dashboard");
@@ -46,6 +42,20 @@ const Register = () => {
                 placeholder="Full Name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                required
+            />
+            <input
+                type="text"
+                placeholder="Monthly Budget"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                required
+            />
+            <input
+                type="number"
+                placeholder="Starting Date of Month"
+                value={som}
+                onChange={(e) => setSom(e.target.value)}
                 required
             />
             <input

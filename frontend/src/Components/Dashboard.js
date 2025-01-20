@@ -1,31 +1,47 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../Context/AuthContext"; // For authentication
 import { db } from "../firebase"; // Firestore instance
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import Chart from "chart.js/auto";
 import "./Dashboard.css"; // CSS for styling
 import { useNavigate } from "react-router-dom";
+import LogoutIcon from '@mui/icons-material/Logout';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 
 const Dashboard = () => {
     const { currentUser, logout } = useAuth(); // Get the logged-in user and logout function
     const [transactions, setTransactions] = useState([]);
-    const [totalMoney, setTotalMoney] = useState(0);
-    const navigate = useNavigate();
+    const [totalMoney, setTotalMoney] = useState(0); // Money from transactions
+    const [userBudget, setUserBudget] = useState(0); // User's registered budget
+    const [newBudget, setNewBudget] = useState(""); // Budget to be updated
+    const [isEditing, setIsEditing] = useState(false); // Toggle for edit mode
+    const navigate = useNavigate(); // To navigate between pages
 
     useEffect(() => {
-        // Fetch transactions from Firestore for the current user
+        // Fetch user details (including budget) from Firestore
         if (currentUser) {
+            const userRef = doc(db, "users", currentUser.uid);
+            const unsubscribeUser = onSnapshot(userRef, (doc) => {
+                const userData = doc.data();
+                setUserBudget(userData?.budget || 0); // Set the user's registered budget
+            });
+
+            // Fetch transactions from Firestore for the current user
             const q = query(collection(db, "transactions"), where("userId", "==", currentUser.uid));
-            const unsubscribe = onSnapshot(q, (snapshot) => {
+            const unsubscribeTransactions = onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
                 setTransactions(data);
 
-                // Calculate total money
+                // Calculate total money from transactions
                 const total = data.reduce((sum, transaction) => sum + transaction.amount, 0);
                 setTotalMoney(total);
             });
 
-            return unsubscribe; // Cleanup on component unmount
+            return () => {
+                unsubscribeUser();
+                unsubscribeTransactions(); // Cleanup on component unmount
+            };
         }
     }, [currentUser]);
 
@@ -61,6 +77,26 @@ const Dashboard = () => {
         }
     };
 
+    const handleIncome = async () => {
+        try {
+            // Update the user's budget in Firestore
+            const userRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userRef, {
+                budget: parseFloat(newBudget), // Update budget
+            });
+            setUserBudget(newBudget); // Update the local state to reflect the new budget
+            setNewBudget(""); // Clear input field
+            setIsEditing(false); // Exit edit mode
+        } catch (error) {
+            console.error("Failed to update budget:", error.message);
+        }
+    };
+
+    const handleEditClick = () => {
+        setIsEditing(true); // Enter edit mode
+        setNewBudget(userBudget); // Pre-fill input with current budget
+    };
+
     return (
         <div className="dashboard">
             {/* Left Panel */}
@@ -77,13 +113,31 @@ const Dashboard = () => {
                         Update Avatar
                     </button>
                 </div>
+
+                {/* Budget Display */}
                 <div className="total-money">
-                    <h3>Total Money</h3>
-                    <p>${totalMoney.toFixed(2)}</p>
+                    Budget : 
+                    {isEditing ? (
+                        <>
+                            <input
+                                type="number"
+                                placeholder="Update Budget"
+                                value={newBudget}
+                                onChange={(e) => setNewBudget(e.target.value)} // Update budget state
+                            />
+
+                            <SaveIcon onClick={handleIncome} />
+
+                        </>
+                    ) : (
+                        <>
+                             ${userBudget.toFixed(2)}{/* Display the registered budget */}
+                            <EditIcon onClick={handleEditClick} />
+                        </>
+                    )}
                 </div>
-                <button className="logout-btn" onClick={handleLogout}>
-                    Logout
-                </button>
+                <div className="total-money">Spend : ${totalMoney.toFixed(2)} </div>
+                <LogoutIcon onClick={handleLogout} />
             </div>
 
             {/* Center Panel */}

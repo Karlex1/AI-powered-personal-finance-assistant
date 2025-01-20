@@ -30,7 +30,7 @@ const AuthProvider = ({ children }) => {
     const login = (email, password) => signInWithEmailAndPassword(auth, email, password);
 
     // Register function with additional user details
-    const register = async (email, password, name, gender) => {
+    const register = async (email, password, name, gender,budget,som) => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
@@ -40,6 +40,8 @@ const AuthProvider = ({ children }) => {
                 name,
                 email,
                 gender,
+                budget: parseFloat(budget), // Convert to number
+                som: parseInt(som, 10), 
             });
 
             return userCredential.user; // Return the created user
