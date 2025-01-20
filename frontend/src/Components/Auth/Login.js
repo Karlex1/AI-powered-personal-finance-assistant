@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useAuth } from "../../Context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom"; // Import the Link component
+import { Link } from "react-router-dom";
+import "./Auth.css";
+
 
 const Login = () => {
     const { login } = useAuth();
@@ -22,6 +24,7 @@ const Login = () => {
     return (
         <div>
             <form onSubmit={handleSubmit}>
+                <h2>Login</h2>
                 <input
                     type="email"
                     placeholder="Email"
