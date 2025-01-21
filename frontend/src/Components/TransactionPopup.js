@@ -12,9 +12,18 @@ const TransactionPopup = ({ open, handleClose }) => {
 
     const handleSubmit = async () => {
         if (auth.currentUser) {
-            const transactionRef = collection(db, "users", auth.currentUser.uid, "transactions");
-            await addDoc(transactionRef, form);
-            handleClose();
+            try {
+                const transactionRef = collection(db, "users", auth.currentUser.uid, "transactions");
+                const transactionData = {
+                    ...form,
+                    userId:auth.currentUser.uid,
+                }
+            await addDoc(transactionRef,transactionData);
+             
+            } catch (e) {
+                console.log("popup error-"+e.message);
+            }finally{
+             handleClose();  }
         }
     };
 

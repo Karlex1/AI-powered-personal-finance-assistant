@@ -2,12 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../Context/AuthContext"; // For authentication
 import { db } from "../firebase"; // Firestore instance
 import { collection, query, where, onSnapshot, doc, updateDoc } from "firebase/firestore";
-import Chart from "chart.js/auto";
+import AddIcon from '@mui/icons-material/Add';
 import "./Dashboard.css"; // CSS for styling
 import { useNavigate } from "react-router-dom";
 import LogoutIcon from '@mui/icons-material/Logout';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
+import TransactionChart from "./TransactionChart";
+import TransactionTable from "./TransactionTable";
+import TransactionPopup from "./TransactionPopup";
 //import CameraAltIcon from '@mui/icons-material/CameraAlt'; // Icon for editing avatar
 
 const Dashboard = () => {
@@ -18,6 +21,7 @@ const Dashboard = () => {
     const [userName, setUserName] = useState("User"); // User's registered budget
     const [newBudget, setNewBudget] = useState(""); // Budget to be updated
     const [isEditing, setIsEditing] = useState(false); // Toggle for edit mode
+    const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate(); // To navigate between pages
 
     useEffect(() => {
@@ -30,12 +34,12 @@ const Dashboard = () => {
 
             });
 
-            const q = query(collection(db, "transactions"), where("userId", "==", currentUser.uid));
+            const q = query(collection(db, "users",currentUser.uid,"transactions"), where("userId", "==", currentUser.uid));
             const unsubscribeTransactions = onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
                 setTransactions(data);
 
-                const total = data.reduce((sum, transaction) => sum + transaction.amount, 0);
+                const total = data.reduce((sum, transaction) => sum + parseFloat(transaction.amount), 0);
                 setTotalMoney(total);
             });
 
@@ -46,27 +50,7 @@ const Dashboard = () => {
         }
     }, [currentUser]);
 
-    useEffect(() => {
-        if (transactions.length > 0) {
-            const ctx = document.getElementById("transactionChart").getContext("2d");
-            const categories = transactions.map((t) => t.category);
-            const amounts = transactions.map((t) => t.amount);
-
-            new Chart(ctx, {
-                type: "doughnut",
-                data: {
-                    labels: categories,
-                    datasets: [
-                        {
-                            label: "Transactions",
-                            data: amounts,
-                            backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
-                        },
-                    ],
-                },
-            });
-        }
-    }, [transactions]);
+    
 
     const handleLogout = async () => {
         try {
@@ -99,6 +83,12 @@ const Dashboard = () => {
     const handleAvatarEdit = () => {
         alert("Feature to update avatar coming soon!");
     };
+    const handleFloatingButtonOpen = () => {
+        setIsOpen(true);
+    }
+    const handleFloatingButtonClose = () => {
+        setIsOpen(false);
+    }
 
     return (
         <div className="dashboard">
@@ -137,28 +127,16 @@ const Dashboard = () => {
                         </>
                     )}
                 </div>
-                <div className="money">Spend : ${totalMoney.toFixed(2)} </div>
+                <div className="money">Spend : ${totalMoney} </div>
                 <LogoutIcon onClick={handleLogout} />
             </div>
             <div className="center-panel">
-                <h3>Transaction Chart</h3>
-                <canvas id="transactionChart"></canvas>
+                <TransactionChart transactions={transactions} />
             </div>
-            <div className="bottom-panel">
-                <h3>Recent Transactions</h3>
-                <ul>
-                    {transactions.length > 0 ? (
-                        transactions.map((transaction) => (
-                            <li key={transaction.id}>
-                                <span>{transaction.description}</span>
-                                <span>${transaction.amount.toFixed(2)}</span>
-                            </li>
-                        ))
-                    ) : (
-                        <li>No transactions found.</li>
-                    )}
-                </ul>
-            </div>
+            <div className="bottom-panel"><TransactionTable transactions={transactions} /></div>
+            <button className="floating-button" onClick={handleFloatingButtonOpen}><AddIcon/></button>
+            {isOpen && <TransactionPopup open={handleFloatingButtonOpen } handleClose={ handleFloatingButtonClose} />}
+        
         </div>
     );
 };
