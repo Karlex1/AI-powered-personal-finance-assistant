@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../Context/AuthContext"; // For authentication
 import { db } from "../firebase"; // Firestore instance
-import { collection, query, where, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import { collection, query, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import AddIcon from '@mui/icons-material/Add';
 import "./Dashboard.css"; // CSS for styling
 import { useNavigate } from "react-router-dom";
@@ -11,18 +11,20 @@ import SaveIcon from '@mui/icons-material/Save';
 import TransactionChart from "./TransactionChart";
 import TransactionTable from "./TransactionTable";
 import TransactionPopup from "./TransactionPopup";
-//import CameraAltIcon from '@mui/icons-material/CameraAlt'; // Icon for editing avatar
+import { useTransaction } from "../Context/TransactionContext";
 
 const Dashboard = () => {
     const { currentUser, logout } = useAuth(); // Get the logged-in user and logout function
-    const [transactions, setTransactions] = useState([]);
+    // const [transactions, setTransactions] = useState([]);
     const [totalMoney, setTotalMoney] = useState(0); // Money from transactions
     const [userBudget, setUserBudget] = useState(0); // User's registered budget
     const [userName, setUserName] = useState("User"); // User's registered budget
     const [newBudget, setNewBudget] = useState(""); // Budget to be updated
     const [isEditing, setIsEditing] = useState(false); // Toggle for edit mode
     const [isOpen, setIsOpen] = useState(false);
+    const [remaining, setRemaining] = useState(0);
     const navigate = useNavigate(); // To navigate between pages
+    const { transactions, setTransactions } = useTransaction();
 
     useEffect(() => {
         if (currentUser) {
@@ -34,13 +36,19 @@ const Dashboard = () => {
 
             });
 
-            const q = query(collection(db, "users",currentUser.uid,"transactions"), where("userId", "==", currentUser.uid));
+            const q = query(collection(db, "users",currentUser.uid,"transactions"));
             const unsubscribeTransactions = onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
                 setTransactions(data);
 
                 const total = data.reduce((sum, transaction) => sum + parseFloat(transaction.amount), 0);
                 setTotalMoney(total);
+                 onSnapshot(doc(db, "users", currentUser.uid), (doc) => {
+                    setRemaining((doc.data().budget)-total);
+                    // console.log(doc.data(),remaining);
+                });
+                // const remain = userBudget - total;
+                // setRemaining(remain);
             });
 
             return () => {
@@ -48,7 +56,7 @@ const Dashboard = () => {
                 unsubscribeTransactions();
             };
         }
-    }, [currentUser]);
+    }, [currentUser,setTransactions]);
 
     
 
@@ -128,6 +136,7 @@ const Dashboard = () => {
                     )}
                 </div>
                 <div className="money">Spend : ${totalMoney} </div>
+                <div className="money">Money Left: ${remaining} </div>
                 <LogoutIcon onClick={handleLogout} />
             </div>
             <div className="center-panel">
