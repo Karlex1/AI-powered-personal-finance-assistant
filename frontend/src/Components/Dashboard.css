@@ -23,6 +23,7 @@
     overflow-y: auto;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
 .user-avatar {
     position: relative;
     width: 100px;
@@ -62,6 +63,7 @@
     color: #4bc0c0;
     text-align: center;
 }
+
 .money {
     margin-top: 20px;
     margin-bottom: 20px;
@@ -79,14 +81,14 @@
     border-radius: 5px;
     background-color: #1e1e2f;
     color: #fff;
-    font-size:0.8rem;
+    font-size: 0.8rem;
 }
 
 .money svg {
     cursor: pointer;
     color: #36a2eb;
     height: 1.1rem;
-    
+
     transition: color 0.3s;
 }
 
@@ -113,11 +115,12 @@
 }
 
 #transactionChart {
-    max-height: 400px;
+    max-height: 300px;
     width: 100%;
 }
 
-.bottom-panel {border: 1px solid #444;
+.bottom-panel {
+    border: 1px solid #444;
     border-radius: 10px;
     padding: 20px;
     background: #2a2a3d;
@@ -126,10 +129,12 @@
     /* align-items: center; */
     overflow-y: auto;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    height: fit-content;
+    max-height: 350px;
 }
 
 .bottom-panel h3 {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: #4bc0c0;
     margin-bottom: 15px;
     align-items: center;
@@ -140,22 +145,33 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    
+    gap: 10px;
 }
 
 .bottom-panel li {
     display: flex;
-    /* justify-content: space-between; */
+    justify-content: space-between;
     align-items: center;
-    margin: 10px 0;
-    padding: 10px 0;
+    margin: 0px;
+    padding: 10px;
     border-bottom: 1px solid #444;
+    border-left: 1px solid #444;
     font-size: 0.9rem;
 }
 
 .bottom-panel li span {
     flex: 1;
-    text-align: left;
+    text-align: center;
+}
+
+.transaction-description {
+
+    max-width: 200px;
+    /* Adjust this to your preferred width */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
 }
 
 button {

@@ -40,6 +40,13 @@ const TransactionTable = ({ transactions }) => {
                                   }
                               />
                               <input
+                                  type="text"
+                                  value={editedTransaction.category}
+                                  onChange={(e) =>
+                                      setEditedTransaction({ ...editedTransaction, category: e.target.value })
+                                  }
+                              />
+                              <input
                                   type="number"
                                   value={editedTransaction.amount}
                                   onChange={(e) =>
@@ -55,7 +62,8 @@ const TransactionTable = ({ transactions }) => {
                               />
                               <button onClick={handleSaveClick}><SaveIcon/></button>
                           </>) : <>
-                          <span>{transaction.description}</span>
+                                  <span className='transaction-description'>{transaction.description}</span>
+                                  <span>{transaction.category}</span>
                           <span>${transaction.amount}</span>
                                   <span>{transaction.date}</span>
                                  <span> <EditIcon onClick={()=>handleEditClick(transaction)} /></span>
