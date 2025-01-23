@@ -16,7 +16,9 @@ const TransactionPopup = ({ open, handleClose }) => {
                 const transactionRef = collection(db, "users", auth.currentUser.uid, "transactions");
                 const transactionData = {
                     ...form,
-                    userId:auth.currentUser.uid,
+                    amount: parseFloat(form.amount), // Ensure amount is a number
+                    date: form.date || new Date().toISOString(),
+                    userId: auth.currentUser.uid,
                 }
             await addDoc(transactionRef,transactionData);
              

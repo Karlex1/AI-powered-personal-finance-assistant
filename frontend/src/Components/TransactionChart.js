@@ -1,14 +1,20 @@
-import React, { useEffect } from 'react'
+import React, { useEffect,useRef } from 'react'
 import { Chart } from 'chart.js/auto';
 
-const TransactionChart = ({transactions}) => {
+const TransactionChart = ({ transactions }) => {
+    const chartRef = useRef(null);
+    const chartInstance = useRef(null);
+
     useEffect(() => {
             if (transactions.length > 0) {
-                const ctx = document.getElementById("transactionChart").getContext("2d");
+                const ctx = chartRef.current.getContext("2d");
+                if (chartInstance.current) {
+                    chartInstance.current.destroy();
+                }
                 const categories = transactions.map((t) => t.category);
                 const amounts = transactions.map((t) => t.amount);
     
-                new Chart(ctx, {
+                chartInstance.current=new Chart(ctx, {
                     type: "doughnut",
                     data: {
                         labels: categories,
@@ -20,13 +26,22 @@ const TransactionChart = ({transactions}) => {
                             },
                         ],
                     },
+                    options: {
+                        responsive: true,
+                      maintainAspectRatio:false,  
+                    },
                 });
+        }
+        return () => {
+            if (chartInstance.current) {
+                chartInstance.current.destroy();
             }
+        }
         }, [transactions]);
   return (
       <div >
           <h3>Transaction Chart</h3>
-          <canvas id="transactionChart"></canvas>
+          <canvas id="transactionChart" ref={chartRef}></canvas>
       </div>
   )
 }
