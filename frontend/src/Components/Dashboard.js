@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../Context/AuthContext"; // For authentication
-import { db } from "../firebase"; // Firestore instance
+import { useAuth } from "../Context/AuthContext";
+import { db } from "../firebase";
 import { collection, query, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import AddIcon from '@mui/icons-material/Add';
-import "./Dashboard.css"; // CSS for styling
+import "./Dashboard.css";
 import { useNavigate } from "react-router-dom";
 import LogoutIcon from '@mui/icons-material/Logout';
 import EditIcon from '@mui/icons-material/Edit';
@@ -14,16 +14,16 @@ import TransactionPopup from "./TransactionPopup";
 import { useTransaction } from "../Context/TransactionContext";
 
 const Dashboard = () => {
-    const { currentUser, logout } = useAuth(); // Get the logged-in user and logout function
-    // const [transactions, setTransactions] = useState([]);
-    const [totalMoney, setTotalMoney] = useState(0); // Money from transactions
-    const [userBudget, setUserBudget] = useState(0); // User's registered budget
-    const [userName, setUserName] = useState("User"); // User's registered budget
-    const [newBudget, setNewBudget] = useState(""); // Budget to be updated
-    const [isEditing, setIsEditing] = useState(false); // Toggle for edit mode
+    const { currentUser, logout } = useAuth();
+    const [totalMoney, setTotalMoney] = useState(0);
+    const [userBudget, setUserBudget] = useState(0);
+    const [userName, setUserName] = useState("User");
+    const [newBudget, setNewBudget] = useState("");
+    const [isEditing, setIsEditing] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [remaining, setRemaining] = useState(0);
-    const navigate = useNavigate(); // To navigate between pages
+    const [leftPanelOpen, setLeftPanelOpen] = useState(false); // State for left panel visibility
+    const navigate = useNavigate();
     const { transactions, setTransactions } = useTransaction();
 
     useEffect(() => {
@@ -33,22 +33,19 @@ const Dashboard = () => {
                 const userData = doc.data();
                 setUserBudget(userData?.budget || 0);
                 setUserName(userData?.name?.toUpperCase() || 0);
-
             });
 
-            const q = query(collection(db, "users",currentUser.uid,"transactions"));
+            const q = query(collection(db, "users", currentUser.uid, "transactions"));
             const unsubscribeTransactions = onSnapshot(q, (snapshot) => {
                 const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
                 setTransactions(data);
 
                 const total = data.reduce((sum, transaction) => sum + parseFloat(transaction.amount), 0);
                 setTotalMoney(total);
-                 onSnapshot(doc(db, "users", currentUser.uid), (doc) => {
-                    setRemaining((doc.data().budget)-total);
-                    // console.log(doc.data(),remaining);
+
+                onSnapshot(doc(db, "users", currentUser.uid), (doc) => {
+                    setRemaining(doc.data().budget - total);
                 });
-                // const remain = userBudget - total;
-                // setRemaining(remain);
             });
 
             return () => {
@@ -56,9 +53,7 @@ const Dashboard = () => {
                 unsubscribeTransactions();
             };
         }
-    }, [currentUser,setTransactions]);
-
-    
+    }, [currentUser, setTransactions]);
 
     const handleLogout = async () => {
         try {
@@ -91,31 +86,32 @@ const Dashboard = () => {
     const handleAvatarEdit = () => {
         alert("Feature to update avatar coming soon!");
     };
-    const handleFloatingButtonOpen = () => {
-        setIsOpen(true);
-    }
-    const handleFloatingButtonClose = () => {
-        setIsOpen(false);
-    }
+
+    const toggleLeftPanel = () => {
+        setLeftPanelOpen(!leftPanelOpen); // Toggle the left panel
+    };
 
     return (
         <div className="dashboard">
-            <div className="left-panel">
+            {/* Hamburger Menu for toggling left panel */}
+            <div className="hamburger-menu" onClick={toggleLeftPanel}>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            {/* Left Panel */}
+            <div className={`left-panel ${leftPanelOpen ? "open" : ""}`}>
                 <div className="user-avatar">
                     <img
-                        src={
-                            currentUser?.photoURL ||
-                            "https://cdn-icons-png.flaticon.com/64/6596/6596121.png"
-                        }
+                        src={currentUser?.photoURL || "https://cdn-icons-png.flaticon.com/64/6596/6596121.png"}
                         alt="User Avatar"
                     />
                     <button className="avatar-edit" onClick={handleAvatarEdit}>
                         <EditIcon />
                     </button>
                 </div>
-                <div className="welcome-message">
-                    Welcome, {userName}!
-                </div>
+                <div className="welcome-message">Welcome, {userName}!</div>
                 <div className="money">
                     Budget : &nbsp;
                     {isEditing ? (
@@ -139,13 +135,24 @@ const Dashboard = () => {
                 <div className="money">Money Left: ${remaining} </div>
                 <LogoutIcon onClick={handleLogout} />
             </div>
+
+            {/* Center Panel */}
             <div className="center-panel">
                 <TransactionChart transactions={transactions} />
             </div>
-            <div className="bottom-panel"><TransactionTable transactions={transactions} /></div>
-            <button className="floating-button" onClick={handleFloatingButtonOpen}><AddIcon/></button>
-            {isOpen && <TransactionPopup open={handleFloatingButtonOpen } handleClose={ handleFloatingButtonClose} />}
-        
+
+            {/* Bottom Panel */}
+            <div className="bottom-panel">
+                <TransactionTable transactions={transactions} />
+            </div>
+
+            {/* Floating Button */}
+            <button className="floating-button" onClick={() => setIsOpen(true)}>
+                <AddIcon />
+            </button>
+
+            {/* Transaction Popup */}
+            {isOpen && <TransactionPopup open={setIsOpen} handleClose={() => setIsOpen(false)} />}
         </div>
     );
 };
